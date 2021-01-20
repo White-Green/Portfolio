@@ -1,0 +1,42 @@
+[package]
+authors = ["White-Green <43771790+White-Green@users.noreply.github.com>"]
+categories = ["wasm"]
+description = "White-Green's Portfolio."
+edition = "2018"
+license = "Apache-2.0/MIT"
+name = "portfolio"
+readme = "./README.md"
+repository = "https://github.com/jetli/create-yew-app.git"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+log = "0.4"
+js-sys = "0.3.46"
+web-sys = "0.3.46"
+yew = "0.17.3"
+yewtil = "0.3.2"
+yew-router = { version = "0.14.0", features = ["web_sys"] }
+wasm-bindgen = "0.2.64"
+wasm-logger = "0.2.0"
+wee_alloc = "0.4.5"
+sha3 = "0.9.1"
+anyhow = "1.0.37"
+serde = "1.0.118"
+aes = { git = "https://github.com/White-Green/impl-encrypt", rev = "5447ca2d61585a0a0984d4dab9cacf66dc0a0d28" }
+once_cell = "1.5.2"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.14"
+
+[dev-dependencies.web-sys]
+version = "0.3"
+features = [
+    "Document",
+    "Element",
+    "HtmlCollection",
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "key": {
+      "name": "Twitter",
+      "image": "/Twitter_Logo_WhiteOnBlue.cc3c8df6.png"
+    },
+    "value": {
+      "display": "@White_Green2525",
+      "link": "https://twitter.com/White_Green2525"
+    }
+  },
+  {
+    "key": {
+      "name": "GitHub",
+      "image": "/GitHub-Mark-120px-plus.930783f7.png"
+    },
+    "value": {
+      "display": "White-Green",
+      "link": "https://github.com/White-Green"
+    }
+  },
+  {
+    "key": "niconico",
+    "value": {
+      "display": "user/37232305",
+      "link": "https://www.nicovideo.jp/user/37232305"
+    }
+  }
+]

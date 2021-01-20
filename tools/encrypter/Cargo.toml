@@ -1,0 +1,12 @@
+[package]
+name = "encrypter"
+version = "0.1.0"
+authors = ["White-Green <43771790+White-Green@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "2.33.3"
+sha3 = "0.9.1"
+aes = { git = "https://github.com/White-Green/impl-encrypt", rev = "5447ca2d61585a0a0984d4dab9cacf66dc0a0d28" }

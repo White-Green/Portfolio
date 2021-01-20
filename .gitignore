@@ -1,0 +1,13 @@
+/*
+!/.gitignore
+!/Cargo.toml
+!/Cargo.lock
+!/LICENSE-APACHE
+!/LICENSE-MIT
+!/package.json
+!/package-lock.json
+!/yarn.lock
+!/README.md
+!/src
+!/tools
+!/static

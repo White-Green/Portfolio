@@ -1,0 +1,34 @@
+[
+  {
+    "category": {
+      "name": "情報処理技術者試験"
+    },
+    "values": [
+      {
+        "name": "基本情報技術者",
+        "time": "2017年春季",
+        "link": "https://www.jitec.ipa.go.jp/1_11seido/fe.html"
+      },
+      {
+        "name": "応用情報技術者",
+        "time": "2017年秋季",
+        "link": "https://www.jitec.ipa.go.jp/1_11seido/ap.html"
+      },
+      {
+        "name": "情報処理安全確保支援士(未登録)",
+        "time": "2018年春季",
+        "link": "https://www.jitec.ipa.go.jp/1_11seido/sc.html"
+      },
+      {
+        "name": "ネットワークスペシャリスト",
+        "time": "2019年秋季",
+        "link": "https://www.jitec.ipa.go.jp/1_11seido/nw.html"
+      },
+      {
+        "name": "データベーススペシャリスト",
+        "time": "2020年秋季",
+        "link": "https://www.jitec.ipa.go.jp/1_11seido/db.html"
+      }
+    ]
+  }
+]
