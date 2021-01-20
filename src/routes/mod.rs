@@ -14,15 +14,15 @@ pub(crate) mod license;
 /// App routes
 #[derive(Switch, Debug, Clone, PartialEq)]
 pub enum AppRoute {
-    #[to = "/profile"]
+    #[to = "/#profile"]
     Profile,
-    #[to = "/qualification"]
+    #[to = "/#qualification"]
     Qualifications,
-    #[to = "/link"]
+    #[to = "/#link"]
     Links,
-    #[to = "/works"]
+    #[to = "/#works"]
     Works,
-    #[to = "/license"]
+    #[to = "/#license"]
     License,
     #[to = "/"]
     Home,
