@@ -46,6 +46,8 @@ impl Component for Nav {
             NavMessage::TryUnlock => {
                 let name = window().prompt_with_message("本サイト所有者の氏名をひらがなで入力してください").expect("error in prompt");
                 if let Some(name) = name {
+                    let name = regex::Regex::new("[^ぁ-ゖ]").unwrap().replace_all(&name, "");
+                    log::info!("{}", name);
                     let key = sha3::Sha3_256::digest(name.as_bytes()).to_vec().try_into().unwrap();
                     let key = aes::Key::AES256(key);
                     self.props.key_callback.emit(key);

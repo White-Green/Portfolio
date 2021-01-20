@@ -29,6 +29,7 @@ anyhow = "1.0.37"
 serde = "1.0.118"
 aes = { git = "https://github.com/White-Green/impl-encrypt", rev = "5447ca2d61585a0a0984d4dab9cacf66dc0a0d28" }
 once_cell = "1.5.2"
+regex = "1.4.3"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.14"

@@ -508,6 +508,7 @@ dependencies = [
  "js-sys",
  "log",
  "once_cell",
+ "regex",
  "serde",
  "sha3",
  "wasm-bindgen",
