@@ -156,13 +156,13 @@ impl Component for Profile {
                         if let Some(status) = &data.status {
                             html! {
                                 <div class="row mt-3">
-                                    <div class="h4 col-3">
+                                    <div class="h4 col-12 col-md-3">
                                         { &data.key }
                                     </div>
-                                    <div class="h4 col-6">
+                                    <div class="h4 col-12 col-sm-8 col-md-6 ml-3 ml-md-0">
                                         { value }
                                     </div>
-                                    <div class="h4 col-3">
+                                    <div class="h4 col-12 col-sm-3 ml-3 ml-sm-0">
                                         { status }
                                     </div>
                                 </div>
@@ -170,10 +170,10 @@ impl Component for Profile {
                         } else {
                             html! {
                                 <div class="row mt-3">
-                                    <div class="h4 col-3">
+                                    <div class="h4 col-12 col-md-3">
                                         { &data.key }
                                     </div>
-                                    <div class="h4 col-9">
+                                    <div class="h4 col-12 col-md-9">
                                         { value }
                                     </div>
                                 </div>
