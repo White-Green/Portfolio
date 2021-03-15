@@ -8,6 +8,7 @@
 !/package-lock.json
 !/yarn.lock
 !/README.md
+!/generate_works.ps1
 !/src
 !/tools
 !/static

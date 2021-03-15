@@ -1,0 +1,25 @@
+{
+  "technology_stacks": {
+    "NicoRandomPicker": [
+      "Azure Functions"
+    ]
+  },
+  "repository_relations": {
+    "Portfolio": [
+      "White-Green.github.io"
+    ]
+  },
+  "technology_stack_info": [
+    {
+      "name": "Azure Functions",
+      "link": "https://azure.microsoft.com/ja-jp/services/functions/",
+      "description": "Microsoft AzureのFaaSのやつ"
+    }
+  ],
+  "language_info": [
+    {
+      "name": "Rust",
+      "link": "https://www.rust-lang.org/"
+    }
+  ]
+}
