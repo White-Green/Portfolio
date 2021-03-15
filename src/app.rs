@@ -2,7 +2,7 @@ use yew::prelude::*;
 use yew_router::{prelude::*, route::Route};
 
 use crate::components::{footer::footer, nav::Nav};
-use crate::routes::{AppRoute, home::Home, license::License, links::Links, profile::Profile, qualifications::Qualifications};
+use crate::routes::{AppRoute, home::Home, license::License, links::Links, profile::Profile, qualifications::Qualifications, works::Works};
 
 /// Root component
 pub(crate) struct App {
@@ -68,7 +68,7 @@ impl Component for App {
                                                 AppRoute::Profile => html!{ <Profile encrypt_key=key.clone() /> },
                                                 AppRoute::Qualifications => html!{ <Qualifications /> },
                                                 AppRoute::Links => html!{ <Links /> },
-                                                AppRoute::Works => html!{{"Works(面倒なのであとで作ります)"}},
+                                                AppRoute::Works => html!{ <Works /> },
                                                 AppRoute::License => html!{},
                                             }
                                         }
