@@ -44,5 +44,7 @@ features = [
     "Element",
     "HtmlCollection",
     "DomParser",
-    "SupportedType"
+    "SupportedType",
+    "SvgsvgElement",
+    "EventTarget"
 ]

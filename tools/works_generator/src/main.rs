@@ -73,7 +73,7 @@ fn write_graph(works: &Works, path: Option<&str>) {
 fn to_graph(works: &Works) -> String {
     let mut result = String::new();
     let Works { repositories: repos, languages: lang, technologies: tech } = works;
-    result.push_str("graph{graph[rankdir=LR];");
+    result.push_str("graph{graph[rankdir=LR];node[style=\"filled\",color=\"lightgray\"];edge[color=\"lightgray\"];");
     {
         result.push_str("subgraph language{node[shape=box];");
         for (i, Language { name, .. }) in lang.iter().enumerate() {
