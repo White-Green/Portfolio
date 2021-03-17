@@ -9,7 +9,7 @@ use once_cell::sync::{Lazy, OnceCell};
 use serde::Deserialize;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
-use web_sys::{Element, Node, SvgsvgElement};
+use web_sys::{Element, HtmlElement, Node, SvgsvgElement};
 use yew::format::Json;
 use yew::prelude::*;
 use yew::services::fetch::*;
@@ -22,12 +22,14 @@ pub(crate) struct Works {
     works_data: Option<WorksData>,
     works_svg: Option<String>,
     node_ref: NodeRef,
-    repository_nodes: Rc<RefCell<Vec<Element>>>,
-    language_nodes: Rc<RefCell<Vec<Element>>>,
-    technology_nodes: Rc<RefCell<Vec<Element>>>,
-    repository_language_edges: Rc<RefCell<Vec<BTreeMap<usize, Element>>>>,
-    repository_technology_edges: Rc<RefCell<Vec<BTreeMap<usize, Element>>>>,
-    repository_repository_edges: Rc<RefCell<Vec<BTreeMap<usize, Element>>>>,
+    selected_node: SelectedNode,
+
+    repository_nodes: Vec<Element>,
+    language_nodes: Vec<Element>,
+    technology_nodes: Vec<Element>,
+    repository_language_edges: Vec<BTreeMap<usize, Element>>,
+    repository_technology_edges: Vec<BTreeMap<usize, Element>>,
+    repository_repository_edges: Vec<BTreeMap<usize, Element>>,
 
     repository_connected_languages: Vec<BTreeSet<usize>>,
     repository_connected_technologies: Vec<BTreeSet<usize>>,
@@ -39,6 +41,15 @@ pub(crate) struct Works {
 pub(crate) enum WorkMessage {
     FetchWorksData(WorksData),
     FetchWorksSvg(String),
+    UpdateSelectedNode(SelectedNode),
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum SelectedNode {
+    Repository(usize),
+    Language(usize),
+    Technology(usize),
     None,
 }
 
@@ -48,7 +59,7 @@ pub struct Repository {
     pub name: String,
     pub homepage: Option<String>,
     pub language: Vec<(usize, usize)>,
-    pub community_profile: Option<CommunityProfile>,
+    pub community_profile: CommunityProfile,
     pub technology_stacks: Vec<usize>,
     pub related_repositories: Vec<usize>,
 }
@@ -124,6 +135,7 @@ impl Component for Works {
             works_data: None,
             works_svg: None,
             node_ref: Default::default(),
+            selected_node: SelectedNode::None,
             repository_nodes: Default::default(),
             language_nodes: Default::default(),
             technology_nodes: Default::default(),
@@ -151,6 +163,12 @@ impl Component for Works {
                 self.render_svg();
                 false
             }
+            WorkMessage::UpdateSelectedNode(n) => {
+                if self.selected_node == n { return false; }
+                self.selected_node = n;
+                self.coloring();
+                true
+            }
             WorkMessage::None => false,
         }
     }
@@ -160,9 +178,139 @@ impl Component for Works {
     }
 
     fn view(&self) -> Html {
+        let modal_title = match self.selected_node {
+            SelectedNode::Repository(i) => self.works_data.as_ref().and_then(|w| w.repositories.get(i)).map(|r| r.name.as_str()).unwrap_or_default(),
+            SelectedNode::Language(i) => self.works_data.as_ref().and_then(|w| w.languages.get(i)).map(|r| r.name.as_str()).unwrap_or_default(),
+            SelectedNode::Technology(i) => self.works_data.as_ref().and_then(|w| w.technologies.get(i)).map(|r| r.name.as_str()).unwrap_or_default(),
+            SelectedNode::None => "",
+        };
+        let url_regex = regex::Regex::new("^https?://").unwrap();
+        let modal_body = match self.selected_node {
+            SelectedNode::Repository(i) => if let Some(WorksData { repositories, languages, technologies }) = self.works_data.as_ref() {
+                let repo = &repositories[i];
+                html! {
+                    <>
+                        { repo.community_profile.description.as_ref().map(|d| html! {
+                            <div class="h6 row">{ d }</div>
+                        }).unwrap_or_default() }
+                        <div class="row">
+                            <a class="h6 col-12 col-sm-6" href=repo.html_url.as_str() target="_blank">{ "repository" }</a>
+                            { repo.homepage.as_ref().and_then(|url|if url_regex.is_match(url) { Some(url) } else { None }).map(|p| html! {
+                                <a class="h6 col" href=p.as_str() target="_blank">{ "homepage" }</a>
+                            }).unwrap_or_default() }
+                        </div>
+                        { if !self.repository_connected_languages[i].is_empty() {
+                            html!{
+                                <div class="row">
+                                    <div class="col-12 h5">{ "related languages:" }</div>
+                                    { for self.repository_connected_languages[i].iter().map(|&i|html!{
+                                        <button class="btn btn-secondary" onclick=self.link.callback(move|_|WorkMessage::UpdateSelectedNode(SelectedNode::Language(i)))>
+                                            <span>{ languages[i].name.as_str() }</span>
+                                        </button>
+                                    }) }
+                                </div>
+                            }
+                        } else { html!{} } }
+                        { if !self.repository_connected_technologies[i].is_empty() {
+                            html!{
+                                <div class="row">
+                                    <div class="col-12 h5">{ "related technologies:" }</div>
+                                    { for self.repository_connected_technologies[i].iter().map(|&i|html!{
+                                        <button class="btn btn-secondary" onclick=self.link.callback(move|_|WorkMessage::UpdateSelectedNode(SelectedNode::Technology(i)))>
+                                            <span>{ technologies[i].name.as_str() }</span>
+                                        </button>
+                                    }) }
+                                </div>
+                            }
+                        } else { html!{} } }
+                        { if !self.repository_connected_repositories[i].is_empty() {
+                            html!{
+                                <div class="row">
+                                    <div class="col-12 h5">{ "related repositories:" }</div>
+                                    { for self.repository_connected_repositories[i].iter().map(|&i|html!{
+                                        <button class="btn btn-secondary" onclick=self.link.callback(move|_|WorkMessage::UpdateSelectedNode(SelectedNode::Repository(i)))>
+                                            <span>{ repositories[i].name.as_str() }</span>
+                                        </button>
+                                    }) }
+                                </div>
+                            }
+                        } else { html!{} } }
+                    </>
+                }
+            } else { html! {} },
+            SelectedNode::Language(i) => if let Some(WorksData { repositories, languages, technologies }) = self.works_data.as_ref() {
+                let lang = &languages[i];
+                html! {
+                    <>
+                        { lang.link.as_ref().and_then(|url|if url_regex.is_match(url) { Some(url) } else { None }).map(|p| html! {
+                            <a class="h6 row" href=p.as_str() target="_blank">{ "homepage" }</a>
+                        }).unwrap_or_default() }
+                        { if !self.language_connected_repositories[i].is_empty() {
+                            html!{
+                                <div class="row">
+                                    <div class="col-12 h5">{ "related repositories:" }</div>
+                                    { for self.language_connected_repositories[i].iter().map(|&i|html!{
+                                        <button class="btn btn-secondary" onclick=self.link.callback(move|_|WorkMessage::UpdateSelectedNode(SelectedNode::Repository(i)))>
+                                            <span>{ repositories[i].name.as_str() }</span>
+                                        </button>
+                                    }) }
+                                </div>
+                            }
+                        } else { html!{} } }
+                    </>
+                }
+            } else { html! {} },
+            SelectedNode::Technology(i) => if let Some(WorksData { repositories, languages, technologies }) = self.works_data.as_ref() {
+                let tech = &technologies[i];
+                html! {
+                    <>
+                        { tech.description.as_ref().map(|d| html! {
+                            <div class="h6 row">{ d }</div>
+                        }).unwrap_or_default() }
+                        { tech.link.as_ref().and_then(|url|if url_regex.is_match(url) { Some(url) } else { None }).map(|p| html! {
+                            <a class="h6 row" href=p.as_str() target="_blank">{ "homepage" }</a>
+                        }).unwrap_or_default() }
+                        { if !self.technology_connected_repositories[i].is_empty() {
+                            html!{
+                                <div class="row">
+                                    <div class="col-12 h5">{ "related repositories:" }</div>
+                                    { for self.technology_connected_repositories[i].iter().map(|&i|html!{
+                                        <button class="btn btn-secondary" onclick=self.link.callback(move|_|WorkMessage::UpdateSelectedNode(SelectedNode::Repository(i)))>
+                                            <span>{ repositories[i].name.as_str() }</span>
+                                        </button>
+                                    }) }
+                                </div>
+                            }
+                        } else { html!{} } }
+                    </>
+                }
+            } else { html! {} },
+            SelectedNode::None => html! {},
+        };
         html! {
             <>
                 <h1 class="m-2">{"Works"}</h1>
+                <button type="button" class ="btn btn-secondary" data-toggle="modal" data-target="#exampleModal" disabled={self.selected_node == SelectedNode::None}>{ "show detail" }</button>
+                <div class="modal" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">{ modal_title }</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">{ "×" }</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="container-fluid">
+                                    { modal_body }
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">{ "close" }</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div ref=self.node_ref.clone() class="m-2"/>
             </>
         }
@@ -173,25 +321,61 @@ impl Component for Works {
     }
 }
 
-fn reset_all_color(repository_nodes: impl Deref<Target=Vec<Element>>,
-                   language_nodes: impl Deref<Target=Vec<Element>>,
-                   technology_nodes: impl Deref<Target=Vec<Element>>,
-                   repository_language_edges: impl Deref<Target=Vec<BTreeMap<usize, Element>>>,
-                   repository_technology_edges: impl Deref<Target=Vec<BTreeMap<usize, Element>>>,
-                   repository_repository_edges: impl Deref<Target=Vec<BTreeMap<usize, Element>>>) {
-    repository_nodes.iter()
-        .chain(language_nodes.iter())
-        .chain(technology_nodes.iter())
-        .chain(repository_language_edges.iter().map(|map| map.iter().map(|(_, e)| e)).flatten())
-        .chain(repository_technology_edges.iter().map(|map| map.iter().map(|(_, e)| e)).flatten())
-        .chain(repository_repository_edges.iter().map(|map| map.iter().map(|(_, e)| e)).flatten())
-        .for_each(|element| {
-            element.query_selector("polygon,path,ellipse").expect("failed querySelector").expect("failed to find polygon|path|ellipse")
-                .set_attribute("stroke", "lightgray");
-        });
-}
-
 impl Works {
+    fn reset_all_color(&self) {
+        self.repository_nodes.iter()
+            .chain(self.language_nodes.iter())
+            .chain(self.technology_nodes.iter())
+            .chain(self.repository_language_edges.iter().map(|map| map.iter().map(|(_, e)| e)).flatten())
+            .chain(self.repository_technology_edges.iter().map(|map| map.iter().map(|(_, e)| e)).flatten())
+            .chain(self.repository_repository_edges.iter().map(|map| map.iter().map(|(_, e)| e)).flatten())
+            .for_each(|element| {
+                element.query_selector("polygon,path,ellipse").expect("failed querySelector").expect("failed to find polygon|path|ellipse")
+                    .set_attribute("stroke", "lightgray");
+            });
+    }
+    fn coloring(&self) {
+        self.reset_all_color();
+        fn set_color(element: &Element, color: &str) {
+            element.query_selector("polygon,path,ellipse").expect("failed querySelector").expect("failed to find polygon|path|ellipse")
+                .set_attribute("stroke", color);
+        }
+        const PRIMARY_COLOR: &str = "forestgreen";
+        const SECONDARY_COLOR: &str = "black";
+        const EDGE_COLOR: &str = "black";
+        match &self.selected_node {
+            &SelectedNode::Repository(i) => {
+                set_color(&self.repository_nodes[i], PRIMARY_COLOR);
+                for &j in &self.repository_connected_languages[i] {
+                    set_color(&self.language_nodes[j], SECONDARY_COLOR);
+                    set_color(&self.repository_language_edges[i][&j], EDGE_COLOR);
+                }
+                for &j in &self.repository_connected_technologies[i] {
+                    set_color(&self.technology_nodes[j], SECONDARY_COLOR);
+                    set_color(&self.repository_technology_edges[i][&j], EDGE_COLOR);
+                }
+                for &j in &self.repository_connected_repositories[i] {
+                    set_color(&self.repository_nodes[j], SECONDARY_COLOR);
+                    set_color(self.repository_repository_edges[i].get(&j).or(self.repository_repository_edges[j].get(&i)).unwrap(), EDGE_COLOR);
+                }
+            }
+            &SelectedNode::Language(i) => {
+                set_color(&self.language_nodes[i], PRIMARY_COLOR);
+                for &j in &self.language_connected_repositories[i] {
+                    set_color(&self.repository_nodes[j], SECONDARY_COLOR);
+                    set_color(&self.repository_language_edges[j][&i], EDGE_COLOR);
+                }
+            }
+            &SelectedNode::Technology(i) => {
+                set_color(&self.technology_nodes[i], PRIMARY_COLOR);
+                for &j in &self.technology_connected_repositories[i] {
+                    set_color(&self.repository_nodes[j], SECONDARY_COLOR);
+                    set_color(&self.repository_technology_edges[j][&i], EDGE_COLOR);
+                }
+            }
+            SelectedNode::None => {}
+        }
+    }
     fn construct_connection(&mut self, works: &WorksData) {
         let mut repository_connected_languages = vec![BTreeSet::new(); works.repositories.len()];
         let mut repository_connected_technologies = vec![BTreeSet::new(); works.repositories.len()];
@@ -261,29 +445,18 @@ impl Works {
                 repository_repository_edges[i] = map;
             }
         }
-        *self.repository_nodes.borrow_mut() = repository_nodes;
-        *self.language_nodes.borrow_mut() = language_nodes;
-        *self.technology_nodes.borrow_mut() = technology_nodes;
-        *self.repository_language_edges.borrow_mut() = repository_language_edges;
-        *self.repository_technology_edges.borrow_mut() = repository_technology_edges;
-        *self.repository_repository_edges.borrow_mut() = repository_repository_edges;
+        self.repository_nodes = repository_nodes;
+        self.language_nodes = language_nodes;
+        self.technology_nodes = technology_nodes;
+        self.repository_language_edges = repository_language_edges;
+        self.repository_technology_edges = repository_technology_edges;
+        self.repository_repository_edges = repository_repository_edges;
     }
     fn set_action(&mut self, svg: &SvgsvgElement) {
         self.construct_elements(svg);
         let callback = {
-            let repository_nodes = Rc::clone(&self.repository_nodes);
-            let language_nodes = Rc::clone(&self.language_nodes);
-            let technology_nodes = Rc::clone(&self.technology_nodes);
-            let repository_language_edges = Rc::clone(&self.repository_language_edges);
-            let repository_technology_edges = Rc::clone(&self.repository_technology_edges);
-            let repository_repository_edges = Rc::clone(&self.repository_repository_edges);
-            let repository_connected_languages = std::mem::take(&mut self.repository_connected_languages);
-            let repository_connected_technologies = std::mem::take(&mut self.repository_connected_technologies);
-            let repository_connected_repositories = std::mem::take(&mut self.repository_connected_repositories);
-            let language_connected_repositories = std::mem::take(&mut self.language_connected_repositories);
-            let technology_connected_repositories = std::mem::take(&mut self.technology_connected_repositories);
+            let callback = self.link.callback(|n| WorkMessage::UpdateSelectedNode(n));
             Closure::wrap(Box::new(move |event: MouseEvent| {
-                // web_sys::console::log_1(event.as_ref());
                 let event_target = if let Some(event_target) = event.target() { event_target } else { return; };
                 let mut element = if let Ok(element) = event_target.dyn_into::<Element>() { element } else { return; };
                 let re = regex::Regex::new("^(?P<type>repository|language|technology)(?P<index>\\d+)$").unwrap();
@@ -294,65 +467,20 @@ impl Works {
                         return;
                     }
                 }
-                reset_all_color(repository_nodes.borrow(),
-                                language_nodes.borrow(),
-                                technology_nodes.borrow(),
-                                repository_language_edges.borrow(),
-                                repository_technology_edges.borrow(),
-                                repository_repository_edges.borrow());
-                let repository_nodes = repository_nodes.borrow();
-                let language_nodes = language_nodes.borrow();
-                let technology_nodes = technology_nodes.borrow();
-                let repository_language_edges = repository_language_edges.borrow();
-                let repository_technology_edges = repository_technology_edges.borrow();
-                let repository_repository_edges = repository_repository_edges.borrow();
                 let id = element.id();
                 let captures = re.captures(&id).unwrap();
-                fn set_color(element: &Element, color: &str) {
-                    element.query_selector("polygon,path,ellipse").expect("failed querySelector").expect("failed to find polygon|path|ellipse")
-                        .set_attribute("stroke", color);
-                }
                 let i: usize = captures.name("index").unwrap().as_str().parse().unwrap();
-                const PRIMARY_COLOR: &str = "forestgreen";
-                const SECONDARY_COLOR: &str = "black";
-                const EDGE_COLOR: &str = "black";
                 match captures.name("type").unwrap().as_str() {
-                    "repository" => {
-                        set_color(&repository_nodes[i], PRIMARY_COLOR);
-                        for &j in &repository_connected_languages[i] {
-                            set_color(&language_nodes[j], SECONDARY_COLOR);
-                            set_color(&repository_language_edges[i][&j], EDGE_COLOR);
-                        }
-                        for &j in &repository_connected_technologies[i] {
-                            set_color(&technology_nodes[j], SECONDARY_COLOR);
-                            set_color(&repository_technology_edges[i][&j], EDGE_COLOR);
-                        }
-                        for &j in &repository_connected_repositories[i] {
-                            set_color(&repository_nodes[j], SECONDARY_COLOR);
-                            set_color(repository_repository_edges[i].get(&j).or(repository_repository_edges[j].get(&i)).unwrap(), EDGE_COLOR);
-                        }
-                    }
-                    "language" => {
-                        set_color(&language_nodes[i], PRIMARY_COLOR);
-                        for &j in &language_connected_repositories[i] {
-                            set_color(&repository_nodes[j], SECONDARY_COLOR);
-                            set_color(&repository_language_edges[j][&i], EDGE_COLOR);
-                        }
-                    }
-                    "technology" => {
-                        set_color(&technology_nodes[i], PRIMARY_COLOR);
-                        for &j in &technology_connected_repositories[i] {
-                            set_color(&repository_nodes[j], SECONDARY_COLOR);
-                            set_color(&repository_technology_edges[j][&i], EDGE_COLOR);
-                        }
-                    }
+                    "repository" => callback.emit(SelectedNode::Repository(i)),
+                    "language" => callback.emit(SelectedNode::Language(i)),
+                    "technology" => callback.emit(SelectedNode::Technology(i)),
                     _ => unreachable!(),
                 }
             }) as Box<dyn Fn(_)>)
         };
-        self.repository_nodes.borrow().iter().for_each(|element| element.add_event_listener_with_callback("click", callback.as_ref().unchecked_ref()).expect("failed to add click event listener"));
-        self.language_nodes.borrow().iter().for_each(|element| element.add_event_listener_with_callback("click", callback.as_ref().unchecked_ref()).expect("failed to add click event listener"));
-        self.technology_nodes.borrow().iter().for_each(|element| element.add_event_listener_with_callback("click", callback.as_ref().unchecked_ref()).expect("failed to add click event listener"));
+        self.repository_nodes.iter().for_each(|element| element.add_event_listener_with_callback("click", callback.as_ref().unchecked_ref()).expect("failed to add click event listener"));
+        self.language_nodes.iter().for_each(|element| element.add_event_listener_with_callback("click", callback.as_ref().unchecked_ref()).expect("failed to add click event listener"));
+        self.technology_nodes.iter().for_each(|element| element.add_event_listener_with_callback("click", callback.as_ref().unchecked_ref()).expect("failed to add click event listener"));
         callback.forget();
     }
     fn render_svg(&mut self) {
